@@ -16,7 +16,7 @@ if not api_key:
 
 if api_key:
     genai.configure(api_key=api_key)
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    model = genai.GenerativeModel('gemini-pro')
 
     # --- FILE UPLOADER ---
     uploaded_file = st.file_uploader("Upload your lecture PDF", type=["pdf"])
