@@ -1,8 +1,7 @@
-
 # 📚 AI Smart Notes & Lecture Summarizer
 **Swarajya Hackfest 2026 - Round 1 Submission (AI & ML Domain: PS-01)**
 
-## Team Members
+**Team: Apex Warriors**
 * Sarthak Ashok Gawnar
 * Om Vitthal Nellawar
 * Abhishek Ashwin Dawada
