@@ -16,15 +16,27 @@ if not api_key:
 
 if api_key:
     genai.configure(api_key=api_key)
-    model = genai.GenerativeModel('gemini-pro')
+    
+    try:
+        # --- AUTO-DETECT MODEL (HACKATHON PRO-MOVE) ---
+        # Ask Google for available models that can generate text
+        valid_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+        
+        # Default to the first available model, but try to find a fast 'flash' model if possible
+        model_name = valid_models[0] 
+        for m in valid_models:
+            if 'flash' in m:
+                model_name = m
+                break
+        
+        model = genai.GenerativeModel(model_name)
 
-    # --- FILE UPLOADER ---
-    uploaded_file = st.file_uploader("Upload your lecture PDF", type=["pdf"])
+        # --- FILE UPLOADER ---
+        uploaded_file = st.file_uploader("Upload your lecture PDF", type=["pdf"])
 
-    if uploaded_file is not None:
-        if st.button("Generate Smart Notes"):
-            with st.spinner("Reading PDF and generating notes... Please wait."):
-                try:
+        if uploaded_file is not None:
+            if st.button("Generate Smart Notes"):
+                with st.spinner("Reading PDF and generating notes... Please wait."):
                     pdf_reader = PyPDF2.PdfReader(uploaded_file)
                     extracted_text = ""
                     for page in pdf_reader.pages:
@@ -43,11 +55,11 @@ if api_key:
                     
                     response = model.generate_content(prompt)
                     
-                    st.success("Notes Generated Successfully!")
+                    # Added a cool little feature to show which model the code auto-selected!
+                    st.success(f"Notes Generated Successfully! (Powered by {model_name})")
                     st.markdown(response.text)
                     
-                except Exception as e:
-                    st.error(f"An error occurred: {e}")
+    except Exception as e:
+        st.error(f"An error occurred: {e}")
 else:
     st.info("Please add your Gemini API Key to continue.")
-  
