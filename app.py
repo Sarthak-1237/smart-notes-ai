@@ -27,7 +27,7 @@ if api_key:
     genai.configure(api_key=api_key)
     
     try:
-        # --- AUTO-DETECT MODEL (Defensive Hackathon Move) ---
+        # --- AUTO-DETECT MODEL ---
         valid_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
         model_name = valid_models[0] 
         for m in valid_models:
@@ -37,21 +37,18 @@ if api_key:
         model = genai.GenerativeModel(model_name)
 
         # --- FILE UPLOADER ---
-        uploaded_file = st.file_uploader("Upload your text-based PDF", type=["pdf"], help="Supports PDFs up to 50MB. Make sure the text is highlightable.")
+        uploaded_file = st.file_uploader("Upload your text-based PDF", type=["pdf"], help="Supports PDFs up to 50MB.")
 
         if uploaded_file is not None:
-            # 🚨 DEFENSIVE CHECK 1: Ensure it's not a secret attack/wrong type
             if uploaded_file.type != "application/pdf":
                 st.error("Error: This app only accepts PDF files.")
                 st.stop()
             
-            # 🚨 DEFENSIVE CHECK 2: Limit file size to 50MB (52,428,800 bytes)
             max_size_bytes = 52428800 
             if uploaded_file.size > max_size_bytes:
                 st.error("Error: That file is too big! Please upload a PDF under 50MB.")
                 st.stop()
 
-            # --- PROCESS PDF ---
             if st.button("Generate Apex Study Guide"):
                 with st.spinner("Processing PDF and generating notes... This takes about 10-30 seconds."):
                     try:
@@ -62,13 +59,9 @@ if api_key:
                             if text:
                                 extracted_text += text
                         
-                        # --- SCANNED/BLANK PDF CHECK ---
                         if not extracted_text.strip():
                             st.error("Uh oh! We couldn't read any text from this PDF. It might be a scanned image or empty.")
-                        
-                        # --- TEXT IS GOOD - SEND TO GEMINI ---
                         else:
-                            # 🚨 Limit extracted text to prevent overloading Gemini for very long documents
                             text_snippet = extracted_text[:20000] 
                             
                             prompt = f"""
@@ -94,39 +87,4 @@ if api_key:
     except Exception as e:
         st.error(f"An unexpected error occurred during setup: {e}")
 else:
-    st.info("API key configuration is required to use this app.")                with st.spinner("Reading PDF and generating notes... Please wait."):
-                    
-                    # --- READ THE PDF ---
-                    pdf_reader = PyPDF2.PdfReader(uploaded_file)
-                    extracted_text = ""
-                    for page in pdf_reader.pages:
-                        text = page.extract_text()
-                        if text:
-                            extracted_text += text
-                    
-                    # --- CHECK IF IT IS BLANK/SCANNED ---
-                    if not extracted_text.strip():
-                        st.error("Uh oh! We couldn't read any text from this PDF. It might be a scanned image or empty.")
-                    
-                    # --- IF TEXT IS GOOD, GENERATE NOTES ---
-                    else:
-                        prompt = f"""
-                        You are an expert tutor. I am giving you the text from a lecture/document. 
-                        Please do the following:
-                        1. Provide a short Summary of the overall topic.
-                        2. Extract the most important Key Points (in bullet points).
-                        3. Generate 3-5 Flashcards or Quiz Questions for revision.
-                        
-                        Here is the text:
-                        {extracted_text}
-                        """
-                        
-                        response = model.generate_content(prompt)
-                        
-                        st.success(f"Notes Generated Successfully! (Powered by {model_name})")
-                        st.markdown(response.text)
-                        
-    except Exception as e:
-        st.error(f"An error occurred: {e}")
-else:
-    st.info("Please add your Gemini API Key to continue.")
+    st.info("API key configuration is required to use this app.")
