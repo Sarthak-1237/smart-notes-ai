@@ -5,7 +5,7 @@ import PyPDF2
 # --- PAGE SETUP ---
 st.set_page_config(page_title="Apex Smart Notes", page_icon="🚀", layout="centered")
 
-# --- PREMIUM UI DESIGN (CUSTOM CSS) ---
+# --- PREMIUM UI DESIGN (CUSTOM CSS & ANIMATED BACKGROUND) ---
 st.markdown("""
 <style>
     /* Import a sleek, modern Google Font */
@@ -15,22 +15,41 @@ st.markdown("""
         font-family: 'Poppins', sans-serif;
     }
     
+    /* ANIMATED BACKGROUND */
+    [data-testid="stAppViewContainer"] {
+        background: linear-gradient(-45deg, #0f172a, #1e1b4b, #312e81, #1e293b);
+        background-size: 400% 400%;
+        animation: gradientBG 15s ease infinite;
+    }
+    
+    @keyframes gradientBG {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+
     /* Hide default Streamlit branding for a pro look */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
     
-    /* Make the main upload box look premium */
+    /* Transparent container for the main content to pop against the moving background */
+    .stApp > header {
+        background-color: transparent !important;
+    }
+    
+    /* Make the main upload box look premium with a glass-morphism effect */
     [data-testid="stFileUploadDropzone"] {
-        border: 2px dashed #FF4B4B;
+        border: 2px dashed #FF8F8F;
         border-radius: 15px;
-        background-color: rgba(255, 75, 75, 0.05);
+        background-color: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(5px);
         transition: all 0.3s ease;
         padding: 20px;
     }
     [data-testid="stFileUploadDropzone"]:hover {
-        background-color: rgba(255, 75, 75, 0.1);
-        border-color: #ff3333;
+        background-color: rgba(255, 255, 255, 0.15);
+        border-color: #FF4B4B;
         transform: scale(1.01);
     }
     
@@ -56,26 +75,29 @@ st.markdown("""
     
     /* Style the Headers */
     h1, h2, h3 {
-        color: #FF4B4B !important;
+        color: #FF8F8F !important;
     }
     
     /* Sleek Success Box */
     .stAlert {
         border-radius: 12px;
         border-left: 5px solid #4CAF50;
+        background-color: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        color: white;
     }
 </style>
 """, unsafe_allow_html=True)
 
 # --- MAIN HEADER ---
 st.markdown("<h1 style='text-align: center;'>🚀 Apex Smart Notes</h1>", unsafe_allow_html=True)
-st.markdown("<h4 style='text-align: center; color: gray;'>AI-Powered Lecture Summarizer & Flashcard Generator ✨</h4>", unsafe_allow_html=True)
+st.markdown("<h4 style='text-align: center; color: #E2E8F0;'>AI-Powered Lecture Summarizer & Flashcard Generator ✨</h4>", unsafe_allow_html=True)
 st.markdown("---")
-st.write("🎯 **Welcome, Apex Warrior!** Drop your massive lecture PDFs below. Our AI tutor will instantly crush it down into a digestible summary, key takeaways, and revision flashcards.")
+st.markdown("<p style='text-align: center; color: #CBD5E1; font-size: 16px;'>🎯 <b>Welcome, Apex Warrior!</b> Drop your massive lecture PDFs below. Our AI tutor will instantly crush it down into a digestible summary, key takeaways, and revision flashcards.</p>", unsafe_allow_html=True)
 
 # --- SIDEBAR (Security & Team) ---
 with st.sidebar:
-    st.image("https://cdn-icons-png.flaticon.com/512/3135/3135679.png", width=80) # Adds a cool little brain/AI icon
+    st.image("https://cdn-icons-png.flaticon.com/512/3135/3135679.png", width=80) 
     st.markdown("### 🛡️ Your Secure Key")
     st.markdown("*Your API key is vaulted and destroyed after your session.*")
     api_key = st.secrets.get("GEMINI_API_KEY")
@@ -95,7 +117,6 @@ if api_key:
     genai.configure(api_key=api_key)
     
     try:
-        # --- AUTO-DETECT MODEL ---
         valid_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
         model_name = valid_models[0] 
         for m in valid_models:
@@ -105,7 +126,7 @@ if api_key:
         model = genai.GenerativeModel(model_name)
 
         # --- FILE UPLOADER ---
-        st.markdown("### 📄 Drop your PDF here:")
+        st.markdown("<h3 style='color: white;'>📄 Drop your PDF here:</h3>", unsafe_allow_html=True)
         uploaded_file = st.file_uploader("", type=["pdf"], help="Supports PDFs up to 50MB.")
 
         if uploaded_file is not None:
@@ -118,7 +139,7 @@ if api_key:
                 st.error("🚨 Error: That file is too big! Please upload a PDF under 50MB.")
                 st.stop()
 
-            st.write("") # Add a little spacing
+            st.write("") 
             if st.button("✨ Generate Apex Study Guide ✨"):
                 with st.spinner("🧠 AI is reading your PDF... Please wait a few seconds!"):
                     try:
@@ -150,7 +171,7 @@ if api_key:
                             st.success(f"✅ Apex Study Guide Generated Successfully! (Powered by {model_name})")
                             st.markdown("---")
                             st.markdown(response.text)
-                            st.balloons() # Triggers celebration balloons on success!
+                            st.balloons() 
                     
                     except Exception as pdf_error:
                         st.error(f"❌ Error reading the PDF: {pdf_error}. The file might be corrupted.")
