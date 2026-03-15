@@ -148,7 +148,7 @@ if api_key:
                             if not video_id:
                                 st.error("⚠️ Invalid YouTube link. Please try again.")
                             else:
-                                transcript = YouTubeTranscriptApi.get_transcript(video_id)
+                                transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=['en', 'en-US', 'hi', 'mr', 'es'])
                                 extracted_text = " ".join([t['text'] for t in transcript])
                                 
                                 prompt = f"Expert tutor. Summarize, list Key Points, and make 5 Flashcards from this video transcript:\n{extracted_text[:20000]}"
