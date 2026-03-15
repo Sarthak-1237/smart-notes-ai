@@ -2,6 +2,8 @@ import streamlit as st
 import google.generativeai as genai
 import PyPDF2
 import sqlite3
+import re
+from youtube_transcript_api import YouTubeTranscriptApi
 
 # --- PAGE SETUP ---
 st.set_page_config(page_title="Apex Smart Notes", page_icon="🚀", layout="centered")
@@ -35,84 +37,41 @@ def get_all_notes():
     conn.close()
     return data
 
-# Initialize the database as soon as the app starts
 init_db()
 
 # --- PREMIUM UI DESIGN (LIVE WALLPAPER) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
-    
-    html, body, [class*="css"] {
-        font-family: 'Poppins', sans-serif;
-    }
+    html, body, [class*="css"] { font-family: 'Poppins', sans-serif; }
     
     [data-testid="stAppViewContainer"] {
         background-image: linear-gradient(rgba(15, 23, 42, 0.85), rgba(30, 27, 75, 0.85)), url("https://media.giphy.com/media/xTiTnxpQ3ghPiB2Hp6/giphy.gif");
-        background-size: cover;
-        background-position: center;
-        background-attachment: fixed;
+        background-size: cover; background-position: center; background-attachment: fixed;
     }
-
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    
-    .stApp > header {
-        background-color: transparent !important;
-    }
+    #MainMenu {visibility: hidden;} footer {visibility: hidden;} header {visibility: hidden;}
+    .stApp > header { background-color: transparent !important; }
     
     [data-testid="stFileUploadDropzone"] {
-        border: 2px dashed #FF8F8F;
-        border-radius: 15px;
-        background-color: rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(5px);
-        transition: all 0.3s ease;
-        padding: 20px;
+        border: 2px dashed #FF8F8F; border-radius: 15px; background-color: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(5px); transition: all 0.3s ease; padding: 20px;
     }
     [data-testid="stFileUploadDropzone"]:hover {
-        background-color: rgba(255, 255, 255, 0.15);
-        border-color: #FF4B4B;
-        transform: scale(1.01);
+        background-color: rgba(255, 255, 255, 0.15); border-color: #FF4B4B; transform: scale(1.01);
     }
     
     .stButton>button {
-        background: linear-gradient(135deg, #FF4B4B 0%, #FF8F8F 100%);
-        color: white;
-        border-radius: 12px;
-        border: none;
-        padding: 12px 24px;
-        font-weight: 600;
-        font-size: 18px;
-        transition: all 0.3s ease;
-        width: 100%;
-        box-shadow: 0 4px 15px rgba(255, 75, 75, 0.3);
+        background: linear-gradient(135deg, #FF4B4B 0%, #FF8F8F 100%); color: white; border-radius: 12px;
+        border: none; padding: 12px 24px; font-weight: 600; font-size: 18px; transition: all 0.3s ease;
+        width: 100%; box-shadow: 0 4px 15px rgba(255, 75, 75, 0.3);
     }
     .stButton>button:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 8px 25px rgba(255, 75, 75, 0.5);
-        color: white;
-        border: none;
+        transform: translateY(-3px); box-shadow: 0 8px 25px rgba(255, 75, 75, 0.5); color: white; border: none;
     }
-    
     h1, h2, h3 { color: #FF8F8F !important; }
-    
-    .stAlert {
-        border-radius: 12px;
-        border-left: 5px solid #4CAF50;
-        background-color: rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(10px);
-        color: white;
-    }
-    
+    .stAlert { border-radius: 12px; border-left: 5px solid #4CAF50; background-color: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); color: white; }
     .stMarkdown p, .stMarkdown li { color: #E2E8F0 !important; }
-    
-    /* Style for the Expanders in the Vault */
-    [data-testid="stExpander"] {
-        background-color: rgba(255,255,255,0.05);
-        border-radius: 10px;
-        border: 1px solid rgba(255,255,255,0.2);
-    }
+    [data-testid="stExpander"] { background-color: rgba(255,255,255,0.05); border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); }
 </style>
 """, unsafe_allow_html=True)
 
@@ -121,111 +80,101 @@ st.markdown("<h1 style='text-align: center;'>🚀 Apex Smart Notes</h1>", unsafe
 st.markdown("<h4 style='text-align: center; color: #CBD5E1;'>AI-Powered Lecture Summarizer & Flashcard Generator ✨</h4>", unsafe_allow_html=True)
 st.markdown("---")
 
-# --- SIDEBAR (Security & Team) ---
+# --- SIDEBAR ---
 with st.sidebar:
     st.image("https://cdn-icons-png.flaticon.com/512/3135/3135679.png", width=80) 
     st.markdown("### 🛡️ Your Secure Key")
     api_key = st.secrets.get("GEMINI_API_KEY")
-    
     st.markdown("---")
     st.markdown("### 👑 Apex Warriors")
-    st.markdown("""
-    * 👨‍💻 **Sarthak Ashok Gawnar**
-    * 👨‍💻 **Om Vitthal Nellawar**
-    * 👨‍💻 **Abhishek Ashwin Dawada**
-    """)
+    st.markdown("* 👨‍💻 **Sarthak Ashok Gawnar**\n* 👨‍💻 **Om Vitthal Nellawar**\n* 👨‍💻 **Abhishek Ashwin Dawada**")
     st.markdown("---")
     st.markdown("🔥 *Swarajya Hackfest 2026*")
 
-# --- API KEY & APP LOGIC ---
+# --- EXTRACT YOUTUBE ID HELPER ---
+def extract_video_id(url):
+    match = re.search(r"(?:v=|\/)([0-9A-Za-z_-]{11}).*", url)
+    return match.group(1) if match else None
+
+# --- APP LOGIC ---
 if api_key:
     genai.configure(api_key=api_key)
-    
     try:
         valid_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
         model_name = valid_models[0] 
         for m in valid_models:
             if 'flash' in m:
-                model_name = m
-                break
+                model_name = m; break
         model = genai.GenerativeModel(model_name)
 
-        # --- CREATE TABS ---
         tab1, tab2 = st.tabs(["📝 Generate Notes", "📚 My Saved Vault"])
 
-        # ====== TAB 1: GENERATION ======
         with tab1:
-            st.markdown("<p style='text-align: center; font-size: 16px;'>🎯 Drop your massive lecture PDFs below. Our AI tutor will instantly crush it down and <b>save it to your database.</b></p>", unsafe_allow_html=True)
+            st.markdown("<p style='text-align: center; font-size: 16px;'>🎯 Select your format. Our AI tutor will instantly crush it down and <b>save it to your database.</b></p>", unsafe_allow_html=True)
+            
+            # --- INPUT SELECTOR ---
+            input_type = st.radio("Choose your learning source:", ["📄 Upload PDF", "🎥 YouTube Lecture Link"], horizontal=True)
             st.write("")
-            uploaded_file = st.file_uploader("", type=["pdf"], help="Supports PDFs up to 50MB.")
 
-            if uploaded_file is not None:
-                if uploaded_file.type != "application/pdf":
-                    st.error("🚨 Error: This app only accepts PDF files.")
-                    st.stop()
-                
-                max_size_bytes = 52428800 
-                if uploaded_file.size > max_size_bytes:
-                    st.error("🚨 Error: That file is too big! Please upload a PDF under 50MB.")
-                    st.stop()
+            # --- PDF LOGIC ---
+            if input_type == "📄 Upload PDF":
+                uploaded_file = st.file_uploader("", type=["pdf"], help="Supports PDFs up to 50MB.")
+                if uploaded_file is not None:
+                    if st.button("✨ Generate & Save to Vault ✨"):
+                        with st.spinner("🧠 AI is reading your PDF... Please wait!"):
+                            try:
+                                pdf_reader = PyPDF2.PdfReader(uploaded_file)
+                                extracted_text = "".join([page.extract_text() for page in pdf_reader.pages if page.extract_text()])
+                                
+                                if not extracted_text.strip():
+                                    st.error("⚠️ Couldn't read text. It might be a scanned image.")
+                                else:
+                                    prompt = f"Expert tutor. Summarize, list Key Points, and make 5 Flashcards from this text:\n{extracted_text[:20000]}"
+                                    response = model.generate_content(prompt)
+                                    save_note_to_db(uploaded_file.name, response.text)
+                                    st.success("✅ Apex Study Guide Saved!")
+                                    st.markdown(response.text)
+                                    st.balloons()
+                            except Exception as e:
+                                st.error(f"❌ Error: {e}")
 
-                if st.button("✨ Generate & Save to Vault ✨"):
-                    with st.spinner("🧠 AI is reading your PDF... Please wait a few seconds!"):
+            # --- YOUTUBE LOGIC ---
+            elif input_type == "🎥 YouTube Lecture Link":
+                youtube_url = st.text_input("🔗 Paste YouTube Video Link here (must have captions enabled):")
+                if youtube_url and st.button("✨ Summarize Video & Save ✨"):
+                    with st.spinner("🧠 AI is watching the video... Please wait!"):
                         try:
-                            pdf_reader = PyPDF2.PdfReader(uploaded_file)
-                            extracted_text = ""
-                            for page in pdf_reader.pages:
-                                text = page.extract_text()
-                                if text:
-                                    extracted_text += text
-                            
-                            if not extracted_text.strip():
-                                st.error("⚠️ Uh oh! We couldn't read any text from this PDF. It might be a scanned image or empty.")
+                            video_id = extract_video_id(youtube_url)
+                            if not video_id:
+                                st.error("⚠️ Invalid YouTube link. Please try again.")
                             else:
-                                text_snippet = extracted_text[:20000] 
+                                transcript = YouTubeTranscriptApi.get_transcript(video_id)
+                                extracted_text = " ".join([t['text'] for t in transcript])
                                 
-                                prompt = f"""
-                                You are an expert tutor preparing a student for an exam.
-                                Please analyze the text and provide:
-                                1. A brief Summary.
-                                2. A structured list of Key Points.
-                                3. Generate exactly 5 Flashcards.
-                                Here is the text:
-                                {text_snippet}
-                                """
-                                
+                                prompt = f"Expert tutor. Summarize, list Key Points, and make 5 Flashcards from this video transcript:\n{extracted_text[:20000]}"
                                 response = model.generate_content(prompt)
+                                save_note_to_db(f"YouTube: {video_id}", response.text)
                                 
-                                # --- DATABASE SAVE MAGIC ---
-                                save_note_to_db(uploaded_file.name, response.text)
-                                # ---------------------------
-                                
-                                st.success(f"✅ Apex Study Guide Generated and Saved to Vault! (Powered by {model_name})")
+                                st.success("✅ Apex Video Guide Saved!")
+                                st.video(youtube_url) # Shows the video right in the app!
                                 st.markdown("---")
                                 st.markdown(response.text)
-                                st.balloons() 
-                        
-                        except Exception as pdf_error:
-                            st.error(f"❌ Error reading the PDF: {pdf_error}. The file might be corrupted.")
+                                st.balloons()
+                        except Exception as e:
+                            st.error("❌ Error reading video. Make sure the video has English closed-captions (subtitles) available!")
 
         # ====== TAB 2: THE DATABASE VAULT ======
         with tab2:
             st.markdown("<h3 style='color: white;'>🗄️ Your Saved AI Notes</h3>", unsafe_allow_html=True)
-            st.write("All previously generated notes are stored securely in your local SQLite database.")
-            
             saved_data = get_all_notes()
-            
             if len(saved_data) == 0:
-                st.info("Your vault is empty! Go generate some notes in the other tab.")
+                st.info("Your vault is empty! Go generate some notes.")
             else:
                 for row in saved_data:
-                    filename = row[0]
-                    content = row[1]
-                    # Create a clickable dropdown box for each saved note
-                    with st.expander(f"📄 Notes from: {filename}"):
-                        st.markdown(content)
+                    with st.expander(f"📄 Notes from: {row[0]}"):
+                        st.markdown(row[1])
 
     except Exception as e:
-        st.error(f"❌ An unexpected error occurred during setup: {e}")
+        st.error(f"❌ Error setup: {e}")
 else:
-    st.warning("⚠️ API key configuration is required to use this app.")
+    st.warning("⚠️ API key required.")
