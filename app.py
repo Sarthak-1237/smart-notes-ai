@@ -112,7 +112,6 @@ if api_key:
         with tab1:
             st.markdown("<p style='text-align: center; font-size: 16px;'>🎯 Select your format. Our AI tutor will instantly crush it down and <b>save it to your database.</b></p>", unsafe_allow_html=True)
             
-            # --- INPUT SELECTOR ---
             input_type = st.radio("Choose your learning source:", ["📄 Upload PDF", "🎥 YouTube Lecture Link"], horizontal=True)
             st.write("")
 
@@ -148,10 +147,8 @@ if api_key:
                             if not video_id:
                                 st.error("⚠️ Invalid YouTube link. Please try again.")
                             else:
-                                # THE ULTIMATE OVERRIDE: Grab ANY available transcript
-                                transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
-                                transcript_obj = next(iter(transcript_list)) 
-                                transcript = transcript_obj.fetch()
+                                # THE ROCK-SOLID METHOD: Give it a huge list of languages to try automatically
+                                transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=['en', 'en-US', 'en-GB', 'hi', 'mr', 'es', 'fr', 'de'])
                                 
                                 extracted_text = " ".join([t['text'] for t in transcript])
                                 
@@ -166,7 +163,7 @@ if api_key:
                                 st.balloons()
                         except Exception as e:
                             st.error(f"❌ System Error: {e}")
-                            
+
         # ====== TAB 2: THE DATABASE VAULT ======
         with tab2:
             st.markdown("<h3 style='color: white;'>🗄️ Your Saved AI Notes</h3>", unsafe_allow_html=True)
