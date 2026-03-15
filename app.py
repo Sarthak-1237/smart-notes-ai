@@ -140,28 +140,32 @@ if api_key:
 
             # --- YOUTUBE LOGIC ---
             elif input_type == "🎥 YouTube Lecture Link":
-                youtube_url = st.text_input("🔗 Paste YouTube Video Link here (must have captions enabled):")
+                youtube_url = st.text_input("🔗 Paste YouTube Video Link here:")
                 if youtube_url and st.button("✨ Summarize Video & Save ✨"):
-                    with st.spinner("🧠 AI is watching the video... Please wait!"):
+                    with st.spinner("🧠 AI is extracting the transcript... Please wait!"):
                         try:
                             video_id = extract_video_id(youtube_url)
                             if not video_id:
                                 st.error("⚠️ Invalid YouTube link. Please try again.")
                             else:
-                                transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=['en', 'en-US', 'hi', 'mr', 'es'])
+                                # THE ULTIMATE OVERRIDE: Grab ANY available transcript
+                                transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+                                transcript_obj = next(iter(transcript_list)) 
+                                transcript = transcript_obj.fetch()
+                                
                                 extracted_text = " ".join([t['text'] for t in transcript])
                                 
-                                prompt = f"Expert tutor. Summarize, list Key Points, and make 5 Flashcards from this video transcript:\n{extracted_text[:20000]}"
+                                prompt = f"You are an expert tutor. Summarize, list Key Points, and make 5 Flashcards from this video transcript. Always output your final response in English:\n{extracted_text[:20000]}"
                                 response = model.generate_content(prompt)
                                 save_note_to_db(f"YouTube: {video_id}", response.text)
                                 
                                 st.success("✅ Apex Video Guide Saved!")
-                                st.video(youtube_url) # Shows the video right in the app!
+                                st.video(youtube_url)
                                 st.markdown("---")
                                 st.markdown(response.text)
                                 st.balloons()
                         except Exception as e:
-                            st.error("❌ Error reading video. Make sure the video has English closed-captions (subtitles) available!")
+                            st.error("❌ Error: This specific video has subtitles completely disabled by the creator. Please test with an educational video or TED Talk!")
 
         # ====== TAB 2: THE DATABASE VAULT ======
         with tab2:
