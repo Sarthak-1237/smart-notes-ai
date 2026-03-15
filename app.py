@@ -5,7 +5,7 @@ import PyPDF2
 # --- PAGE SETUP ---
 st.set_page_config(page_title="Apex Smart Notes", page_icon="🚀", layout="centered")
 
-# --- PREMIUM UI DESIGN (CUSTOM CSS & ANIMATED BACKGROUND) ---
+# --- PREMIUM UI DESIGN (LIVE WALLPAPER) ---
 st.markdown("""
 <style>
     /* Import a sleek, modern Google Font */
@@ -15,17 +15,12 @@ st.markdown("""
         font-family: 'Poppins', sans-serif;
     }
     
-    /* ANIMATED BACKGROUND */
+    /* LIVE ANIMATED BACKGROUND WITH DARK GLASS OVERLAY */
     [data-testid="stAppViewContainer"] {
-        background: linear-gradient(-45deg, #0f172a, #1e1b4b, #312e81, #1e293b);
-        background-size: 400% 400%;
-        animation: gradientBG 15s ease infinite;
-    }
-    
-    @keyframes gradientBG {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
+        background-image: linear-gradient(rgba(15, 23, 42, 0.85), rgba(30, 27, 75, 0.85)), url("https://media.giphy.com/media/xTiTnxpQ3ghPiB2Hp6/giphy.gif");
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
     }
 
     /* Hide default Streamlit branding for a pro look */
@@ -33,7 +28,7 @@ st.markdown("""
     footer {visibility: hidden;}
     header {visibility: hidden;}
     
-    /* Transparent container for the main content to pop against the moving background */
+    /* Transparent container for the main content */
     .stApp > header {
         background-color: transparent !important;
     }
@@ -86,14 +81,19 @@ st.markdown("""
         backdrop-filter: blur(10px);
         color: white;
     }
+    
+    /* Make text readable against the dark background */
+    .stMarkdown p, .stMarkdown li {
+        color: #E2E8F0 !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
 # --- MAIN HEADER ---
 st.markdown("<h1 style='text-align: center;'>🚀 Apex Smart Notes</h1>", unsafe_allow_html=True)
-st.markdown("<h4 style='text-align: center; color: #E2E8F0;'>AI-Powered Lecture Summarizer & Flashcard Generator ✨</h4>", unsafe_allow_html=True)
+st.markdown("<h4 style='text-align: center; color: #CBD5E1;'>AI-Powered Lecture Summarizer & Flashcard Generator ✨</h4>", unsafe_allow_html=True)
 st.markdown("---")
-st.markdown("<p style='text-align: center; color: #CBD5E1; font-size: 16px;'>🎯 <b>Welcome, Apex Warrior!</b> Drop your massive lecture PDFs below. Our AI tutor will instantly crush it down into a digestible summary, key takeaways, and revision flashcards.</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; font-size: 16px;'>🎯 <b>Welcome, Apex Warrior!</b> Drop your massive lecture PDFs below. Our AI tutor will instantly crush it down into a digestible summary, key takeaways, and revision flashcards.</p>", unsafe_allow_html=True)
 
 # --- SIDEBAR (Security & Team) ---
 with st.sidebar:
