@@ -165,8 +165,8 @@ if api_key:
                                 st.markdown(response.text)
                                 st.balloons()
                         except Exception as e:
-                            st.error("❌ Error: This specific video has subtitles completely disabled by the creator. Please test with an educational video or TED Talk!")
-
+                            st.error(f"❌ System Error: {e}")
+                            
         # ====== TAB 2: THE DATABASE VAULT ======
         with tab2:
             st.markdown("<h3 style='color: white;'>🗄️ Your Saved AI Notes</h3>", unsafe_allow_html=True)
